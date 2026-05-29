@@ -1,292 +1,476 @@
-<!DOCTYPE html>
-<html lang="ja" class="scroll-smooth">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>アニメ「七つの大罪」非公式解説サイト</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700;900&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        serif: ['"Noto Serif JP"', 'serif'],
-                    },
-                    colors: {
-                        'sin-red': '#B91C1C',
-                        'sin-gold': '#D97706',
-                        'sin-dark': '#111827',
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        /* カスタムスクロールバー */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #111827;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #B91C1C;
-            border-radius: 4px;
-        }
-        .hero-bg {
-            background: radial-gradient(circle at center, #374151 0%, #111827 100%);
-            position: relative;
-        }
-        .hero-bg::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-image: url('data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23b91c1c" fill-opacity="0.05"%3E%3Cpath d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');
-            opacity: 0.5;
-            z-index: 0;
-        }
-    </style>
-</head>
-<body class="font-serif bg-sin-dark text-gray-200 antialiased selection:bg-sin-red selection:text-white">
+import React, { useState, useEffect } from 'react';
+import { Menu, X, Info } from 'lucide-react';
 
-    <!-- ナビゲーション -->
-    <nav class="fixed w-full z-50 bg-sin-dark/90 backdrop-blur-sm border-b border-sin-red/30">
-        <div class="max-w-6xl mx-auto px-4">
-            <div class="flex justify-between items-center h-16">
-                <a href="#" class="text-2xl font-black text-white tracking-widest drop-shadow-md">
-                    <span class="text-sin-red">七</span>つの大罪<span class="text-sm font-normal ml-2 text-gray-400">解説録</span>
-                </a>
-                <div class="hidden md:flex space-x-8">
-                    <a href="#synopsis" class="hover:text-sin-red transition-colors duration-300">あらすじ</a>
-                    <a href="#characters" class="hover:text-sin-red transition-colors duration-300">キャラクター</a>
-                    <a href="#world" class="hover:text-sin-red transition-colors duration-300">世界観・用語</a>
-                </div>
-            </div>
-        </div>
-    </nav>
+// --- データ定義 ---
+// ホバー時の発光効果（shadowColor）を強化し、よりリッチなディティールに修正
+const characters = [
+  {
+    id: 1,
+    name: 'メリオダス',
+    title: '憤怒の罪（ドラゴン・シン）',
+    symbol: 'WRATH',
+    description: '本作の主人公。移動酒場「豚の帽子」亭の店長にして、〈七つの大罪〉の団長。見た目は少年だが、底知れぬ力と過去を秘めている。',
+    detail: 'かつては魔神王の長男であり、魔神族の精鋭〈十戒〉の統率者として恐れられていた。自身に向けられた魔力を倍返しにする「全反撃（フルカウンター）」という魔力を持つ。神器は魔剣ロストヴェイン。',
+    colorTheme: 'red',
+    bgGradient: 'from-red-900 to-gray-900',
+    borderColor: 'hover:border-red-600',
+    textColor: 'text-red-500',
+    shadowColor: 'hover:shadow-[0_0_30px_-5px_rgba(220,38,38,0.4)]'
+  },
+  {
+    id: 2,
+    name: 'エリザベス',
+    title: 'リオネス王国第3王女',
+    symbol: 'PRINCESS',
+    description: '本作のヒロイン。聖騎士によるクーデターから王国を救うため、〈七つの大罪〉を探す旅に出た。泣き虫だが強い信念と優しさを持つ。',
+    detail: 'その正体は最高神の娘である女神族の転生体。強力な治癒の魔力と、魔神族の瘴気を浄化する力を持つ。メリオダスとは三千年前から深い因縁で結ばれている。',
+    colorTheme: 'blue',
+    bgGradient: 'from-blue-900 to-gray-900',
+    borderColor: 'hover:border-blue-500',
+    textColor: 'text-blue-400',
+    shadowColor: 'hover:shadow-[0_0_30px_-5px_rgba(59,130,246,0.4)]'
+  },
+  {
+    id: 3,
+    name: 'ホーク',
+    title: '残飯処理騎士団団長',
+    symbol: 'PIG',
+    description: 'メリオダスの相棒で、人語を話す豚。「豚の帽子」亭の看板豚であり、客の残飯を処理するのが仕事。自称「最強の戦士」。',
+    detail: '実は煉獄出身の生き物。魔力を持つものを食べると、その特性を一時的に自身に反映させる「変身（トランスポーク）」という特異な能力を持っている。',
+    colorTheme: 'pink',
+    bgGradient: 'from-pink-900 to-gray-900',
+    borderColor: 'hover:border-pink-500',
+    textColor: 'text-pink-400',
+    shadowColor: 'hover:shadow-[0_0_30px_-5px_rgba(236,72,153,0.4)]'
+  },
+  {
+    id: 4,
+    name: 'ディアンヌ',
+    title: '嫉妬の罪（サーペント・シン）',
+    symbol: 'ENVY',
+    description: '巨人族の少女。メリオダスのことが大好きで、彼に近づく女性には嫉妬心を燃やす。巨大な体と大地を操る魔力を持つ。',
+    detail: '神器は戦鎚ギデオン。大地との繋がりを深め、巨大な岩を操ったり、地震を起こしたりする「創造（クリエイション）」の魔力を持つ。キングとは幼馴染のような関係。',
+    colorTheme: 'orange',
+    bgGradient: 'from-orange-900 to-gray-900',
+    borderColor: 'hover:border-orange-500',
+    textColor: 'text-orange-500',
+    shadowColor: 'hover:shadow-[0_0_30px_-5px_rgba(249,115,22,0.4)]'
+  },
+  {
+    id: 5,
+    name: 'バン',
+    title: '強欲の罪（フォックス・シン）',
+    symbol: 'GREED',
+    description: '「不死身のバン」の異名を持つ。どんな傷も瞬時に回復する不老不死の肉体を持つ。メリオダスとは親友であり喧嘩仲間。',
+    detail: '妖精王の森にある「生命の泉」を飲んだことで不老不死となった。他者の魔力や身体能力を奪う「強奪（スナッチ）」の魔力を持つ。神器は聖棍クレシューズ。',
+    colorTheme: 'purple',
+    bgGradient: 'from-purple-900 to-gray-900',
+    borderColor: 'hover:border-purple-500',
+    textColor: 'text-purple-500',
+    shadowColor: 'hover:shadow-[0_0_30px_-5px_rgba(168,85,247,0.4)]'
+  },
+  {
+    id: 6,
+    name: 'キング',
+    title: '怠惰の罪（グリズリー・シン）',
+    symbol: 'SLOTH',
+    description: '本名は妖精王ハーレクイン。普段は少年の姿をしているが、緊張するとふくよかなおっさんの姿になる。',
+    detail: '妖精族の王。神器である霊槍シャスティフォルを自在に操り、多様な形態に変化させて戦う。魔力は「災厄（ディザスター）」。ディアンヌに想いを寄せている。',
+    colorTheme: 'green',
+    bgGradient: 'from-green-900 to-gray-900',
+    borderColor: 'hover:border-green-500',
+    textColor: 'text-green-500',
+    shadowColor: 'hover:shadow-[0_0_30px_-5px_rgba(34,197,94,0.4)]'
+  },
+  {
+    id: 7,
+    name: 'ゴウセル',
+    title: '色欲の罪（ゴート・シン）',
+    symbol: 'LUST',
+    description: '中性的な容姿で、常に無表情かつ抑揚のない話し方をする。人の心や記憶を読み取ったり、操作したりする魔力を持つ。',
+    detail: 'その正体は、かつて〈十戒〉の無欲のゴウセルによって作られた精巧な人形。感情を持たないが、他者の感情を理解しようと模索している。魔力は「侵入（インベイジョン）」。神器は双弓ヘリット。',
+    colorTheme: 'pink',
+    bgGradient: 'from-pink-800 to-gray-900',
+    borderColor: 'hover:border-pink-400',
+    textColor: 'text-pink-400',
+    shadowColor: 'hover:shadow-[0_0_30px_-5px_rgba(244,114,182,0.4)]'
+  },
+  {
+    id: 8,
+    name: 'マーリン',
+    title: '暴食の罪（ボア・シン）',
+    symbol: 'GLUTTONY',
+    description: 'ブリタニア一の魔術士と称される妖艶な美女。常に不敵な笑みを浮かべ、様々な魔法具（マジックアイテム）を開発している。',
+    detail: '賢者の都ベリアアルインの生き残りであり、最高神と魔神王から二重の祝福を受けた特異な存在。自身の時間を止める「無限（インフィニティ）」の魔力を持つ。神器は明星アルダン。',
+    colorTheme: 'indigo',
+    bgGradient: 'from-indigo-900 to-gray-900',
+    borderColor: 'hover:border-indigo-500',
+    textColor: 'text-indigo-400',
+    shadowColor: 'hover:shadow-[0_0_30px_-5px_rgba(99,102,241,0.4)]'
+  },
+  {
+    id: 9,
+    name: 'エスカノール',
+    title: '傲慢の罪（ライオン・シン）',
+    symbol: 'PRIDE',
+    description: '夜は気弱で痩せ細った老人だが、日の出と共に体が巨大化し、性格も「傲慢」に変化する。正午には無敵の強さを誇る。',
+    detail: '太陽の動きと共に力が増減する特異体質（魔力「太陽（サンシャイン）」）を持つ。正午の1分間のみ「天上天下唯我独尊（ザ・ワン）」と呼ばれる最強状態になる。神器は神斧リッタ。マーリンに恋をしている。',
+    colorTheme: 'yellow',
+    bgGradient: 'from-yellow-900 to-gray-900',
+    borderColor: 'hover:border-yellow-500',
+    textColor: 'text-yellow-500',
+    shadowColor: 'hover:shadow-[0_0_30px_-5px_rgba(234,179,8,0.4)]'
+  }
+];
 
-    <!-- ヒーローセクション -->
-    <header class="hero-bg min-h-[70vh] flex items-center justify-center pt-16 relative overflow-hidden">
-        <div class="absolute inset-0 bg-black/40 z-0"></div>
-        <div class="relative z-10 text-center px-4 max-w-4xl mx-auto">
-            <p class="text-sin-gold tracking-[0.2em] mb-4 text-sm md:text-base font-bold">
-                人と、人ならざるものの世界が、分かたれてはいなかった古の物語。
+const worldTerms = [
+  {
+    term: 'ブリタニア',
+    desc: '物語の舞台となる大陸。人間族、巨人族、妖精族、魔神族、女神族など、多様な種族が存在する（または過去に存在していた）地。',
+    borderColor: 'border-red-700'
+  },
+  {
+    term: '聖騎士（せいきし）',
+    desc: '一騎当千の力を誇る、王国を守護する騎士たち。魔力を操り、強大な戦闘力を持つため、一般の兵士や民衆からは畏怖の対象となっている。',
+    borderColor: 'border-blue-500'
+  },
+  {
+    term: '聖戦（せいせん）',
+    desc: '三千年前、魔神族と、人間・女神・妖精・巨人の四種族連合との間で起こった大規模な戦争。この戦いにより魔神族は封印されたと伝えられている。',
+    borderColor: 'border-purple-600'
+  },
+  {
+    term: '神器（じんぎ）',
+    desc: 'リオネス国王から〈七つの大罪〉のメンバーそれぞれに下賜された特別な武器。持ち主の魔力を最大限に引き出すことができる。',
+    borderColor: 'border-amber-600'
+  }
+];
+
+// --- コンポーネント ---
+export default function App() {
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [selectedCharacter, setSelectedCharacter] = useState(null);
+  
+  // 扉のアニメーション状態管理 ('closed' | 'opening' | 'opened')
+  const [doorState, setDoorState] = useState('closed');
+
+  // スクロール検知
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // 扉を開く処理
+  const handleOpenDoor = () => {
+    if (doorState !== 'closed') return;
+    setDoorState('opening');
+    
+    // 1.5秒かけて扉が開くアニメーションを待ち、完全に開いた状態にする
+    setTimeout(() => {
+      setDoorState('opened');
+      // 自動的に少し下（あらすじ）へスクロールさせる
+      const element = document.getElementById('synopsis');
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 1500); 
+  };
+
+  const scrollToSection = (id) => {
+    setMobileMenuOpen(false);
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  return (
+    // 扉が開くまでは `h-screen overflow-hidden` でスクロールをロック
+    <div className={`bg-gray-950 text-gray-200 min-h-screen antialiased selection:bg-red-700 selection:text-white relative ${doorState !== 'opened' ? 'h-screen overflow-hidden' : ''}`} style={{ fontFamily: '"Noto Serif JP", serif' }}>
+      
+      {/* 外部フォントとカスタムCSS */}
+      <style>
+        {`
+          @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700;900&display=swap');
+          
+          ::-webkit-scrollbar { width: 8px; }
+          ::-webkit-scrollbar-track { background: #030712; }
+          ::-webkit-scrollbar-thumb { background: #991b1b; border-radius: 4px; }
+          ::-webkit-scrollbar-thumb:hover { background: #b91c1c; }
+          
+          .bg-pattern {
+            background-image: radial-gradient(circle at center, #1f2937 0%, transparent 100%), 
+                              url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23991b1b' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+          }
+
+          /* モーダル表示用アニメーション */
+          @keyframes popIn {
+            0% { opacity: 0; transform: scale(0.95); }
+            100% { opacity: 1; transform: scale(1); }
+          }
+          .animate-pop-in {
+            animation: popIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          }
+        `}
+      </style>
+
+      {/* ====================================================
+          オープニング：重厚な扉の演出
+          ==================================================== */}
+      {doorState !== 'opened' && (
+        <div className="fixed inset-0 z-[100] flex pointer-events-auto bg-black">
+          
+          {/* 左側の扉 */}
+          <div className={`relative w-1/2 h-full bg-gray-950 border-r-2 border-red-900/50 flex items-center justify-end overflow-hidden transition-transform duration-[1500ms] ease-[cubic-bezier(0.4,0,0.2,1)] ${doorState === 'opening' ? '-translate-x-full' : 'translate-x-0'} shadow-[10px_0_30px_rgba(0,0,0,0.8)]`}>
+            {/* 扉の装飾（左半円） */}
+            <div className={`w-[30vh] h-[30vh] border-4 border-red-900/40 rounded-full translate-x-1/2 transition-opacity duration-500 ${doorState === 'opening' ? 'opacity-0' : 'opacity-100'} shadow-[0_0_20px_rgba(185,28,28,0.5)]`}></div>
+            {/* 閉まっている時の発光ライン */}
+            <div className={`absolute right-0 top-0 bottom-0 w-[2px] bg-red-700/50 shadow-[0_0_15px_rgba(220,38,38,0.8)] transition-opacity duration-300 ${doorState === 'opening' ? 'opacity-0' : 'opacity-100'}`}></div>
+          </div>
+
+          {/* 右側の扉 */}
+          <div className={`relative w-1/2 h-full bg-gray-950 border-l-2 border-red-900/50 flex items-center justify-start overflow-hidden transition-transform duration-[1500ms] ease-[cubic-bezier(0.4,0,0.2,1)] ${doorState === 'opening' ? 'translate-x-full' : 'translate-x-0'} shadow-[-10px_0_30px_rgba(0,0,0,0.8)]`}>
+            {/* 扉の装飾（右半円） */}
+            <div className={`w-[30vh] h-[30vh] border-4 border-red-900/40 rounded-full -translate-x-1/2 transition-opacity duration-500 ${doorState === 'opening' ? 'opacity-0' : 'opacity-100'} shadow-[0_0_20px_rgba(185,28,28,0.5)]`}></div>
+          </div>
+
+          {/* 扉の表面に描画されるコンテンツ（タイトルとボタン） */}
+          <div className={`absolute inset-0 flex flex-col items-center justify-center z-10 transition-all duration-700 ${doorState === 'opening' ? 'opacity-0 scale-110 pointer-events-none' : 'opacity-100 scale-100'}`}>
+            
+            <p className="text-amber-500 tracking-[0.2em] mb-4 text-sm md:text-base font-bold animate-pulse drop-shadow-md">
+              人と、人ならざるものの世界が、分かたれてはいなかった古の物語。
             </p>
-            <h1 class="text-5xl md:text-7xl font-black text-white mb-6 tracking-widest drop-shadow-2xl">
-                <span class="text-sin-red">七</span>つの大罪
+            
+            <h1 className="text-6xl md:text-8xl font-black text-white mb-6 tracking-widest drop-shadow-[0_5px_15px_rgba(0,0,0,0.8)]">
+              <span className="text-red-700 drop-shadow-[0_0_10px_rgba(185,28,28,0.8)]">七</span>つの大罪
             </h1>
-            <p class="text-lg md:text-xl text-gray-300 leading-relaxed max-w-2xl mx-auto mb-8">
-                伝説の逆賊〈七つの大罪〉。彼らは本当に国を裏切った悪党なのか？<br>
-                王女エリザベスと、少年メリオダスの出会いが、世界を変える旅の始まりとなる。
+            
+            <p className="text-lg md:text-xl text-gray-300 leading-relaxed max-w-2xl mx-auto mb-12 text-center drop-shadow-md px-4">
+              伝説の逆賊〈七つの大罪〉。彼らは本当に国を裏切った悪党なのか？<br className="hidden md:block" />
+              王女エリザベスと、少年メリオダスの出会いが、世界を変える旅の始まりとなる。
             </p>
-            <a href="#synopsis" class="inline-block bg-sin-red hover:bg-red-700 text-white font-bold py-3 px-8 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg shadow-red-900/50">
-                物語の扉を開く
-            </a>
+            
+            {/* 扉を開くトリガーボタン */}
+            <button 
+              onClick={handleOpenDoor}
+              className="group relative flex items-center justify-center bg-transparent border-2 border-red-700 text-white font-bold py-4 px-12 rounded-full transition-all duration-300 transform hover:scale-105 hover:bg-red-900/30 shadow-[0_0_15px_rgba(185,28,28,0.4)] hover:shadow-[0_0_30px_rgba(185,28,28,0.8)] overflow-hidden"
+            >
+              <span className="relative z-10 tracking-widest text-lg">物語の扉を開く</span>
+              {/* ホバー時の光エフェクト */}
+              <div className="absolute inset-0 bg-gradient-to-r from-red-700/0 via-red-700/30 to-red-700/0 -translate-x-full group-hover:animate-[shimmer_2s_infinite]"></div>
+            </button>
+          </div>
         </div>
-    </header>
+      )}
 
-    <!-- あらすじ -->
-    <section id="synopsis" class="py-20 px-4">
-        <div class="max-w-4xl mx-auto">
-            <div class="flex items-center justify-center mb-12">
-                <div class="h-[1px] w-16 bg-sin-red"></div>
-                <h2 class="text-3xl font-bold mx-6 tracking-widest text-white">あらすじ</h2>
-                <div class="h-[1px] w-16 bg-sin-red"></div>
+      {/* ====================================================
+          メインコンテンツ（扉が開いた後に操作可能になる）
+          ==================================================== */}
+      
+      {/* ナビゲーションバー（扉が開いた後にフェードインして降りてくる） */}
+      <nav className={`fixed w-full z-50 transition-all duration-1000 delay-300 ${doorState === 'opened' ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full'} ${isScrolled ? 'bg-gray-950/95 backdrop-blur-md border-b border-red-900/50 shadow-lg' : 'bg-transparent border-b border-transparent'}`}>
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="flex justify-between items-center h-20">
+            <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="text-2xl font-black text-white tracking-widest drop-shadow-md cursor-pointer hover:opacity-80 transition-opacity">
+              <span className="text-red-700">七</span>つの大罪<span className="text-sm font-normal ml-2 text-gray-400 hidden sm:inline">解説録</span>
+            </button>
+            
+            {/* デスクトップメニュー */}
+            <div className="hidden md:flex space-x-10">
+              <button onClick={() => scrollToSection('synopsis')} className="text-sm font-bold tracking-widest text-gray-300 hover:text-red-500 transition-colors duration-300 relative group">
+                あらすじ
+                <span className="absolute -bottom-2 left-1/2 w-0 h-[2px] bg-red-600 transition-all duration-300 group-hover:w-full group-hover:left-0"></span>
+              </button>
+              <button onClick={() => scrollToSection('characters')} className="text-sm font-bold tracking-widest text-gray-300 hover:text-red-500 transition-colors duration-300 relative group">
+                キャラクター
+                <span className="absolute -bottom-2 left-1/2 w-0 h-[2px] bg-red-600 transition-all duration-300 group-hover:w-full group-hover:left-0"></span>
+              </button>
+              <button onClick={() => scrollToSection('world')} className="text-sm font-bold tracking-widest text-gray-300 hover:text-red-500 transition-colors duration-300 relative group">
+                世界観・用語
+                <span className="absolute -bottom-2 left-1/2 w-0 h-[2px] bg-red-600 transition-all duration-300 group-hover:w-full group-hover:left-0"></span>
+              </button>
+            </div>
+
+            {/* モバイルメニューボタン */}
+            <button className="md:hidden text-gray-300 hover:text-white" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+              {mobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* モバイルドロップダウンメニュー */}
+      {mobileMenuOpen && (
+        <div className="md:hidden fixed top-20 left-0 w-full bg-gray-950/95 backdrop-blur-lg border-b border-red-900/50 z-40 shadow-xl">
+          <div className="flex flex-col p-6 space-y-6">
+            <button onClick={() => scrollToSection('synopsis')} className="text-left text-lg font-bold tracking-widest text-gray-300 hover:text-red-500 pb-4 border-b border-gray-800/50">あらすじ</button>
+            <button onClick={() => scrollToSection('characters')} className="text-left text-lg font-bold tracking-widest text-gray-300 hover:text-red-500 pb-4 border-b border-gray-800/50">キャラクター</button>
+            <button onClick={() => scrollToSection('world')} className="text-left text-lg font-bold tracking-widest text-gray-300 hover:text-red-500 pb-2">世界観・用語</button>
+          </div>
+        </div>
+      )}
+
+      {/* コンテンツラッパー（扉が開くまで非表示にするか、下に隠しておく） */}
+      <div className="bg-pattern min-h-screen pt-24">
+        
+        {/* あらすじ */}
+        <section id="synopsis" className="py-24 px-4 scroll-mt-20">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-center justify-center mb-20">
+              <div className="h-[2px] w-24 bg-gradient-to-l from-red-700 to-transparent"></div>
+              <h2 className="text-3xl md:text-4xl font-black mx-8 tracking-widest text-white drop-shadow-lg">あらすじ</h2>
+              <div className="h-[2px] w-24 bg-gradient-to-r from-red-700 to-transparent"></div>
             </div>
             
-            <div class="bg-gray-800/50 p-8 md:p-12 rounded-2xl border border-gray-700 shadow-2xl relative">
-                <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 text-sin-red text-6xl opacity-20">"</div>
-                <p class="text-lg leading-loose text-gray-300 mb-6">
-                    いまだ人と、ひとならざるものの世界が、分かたれてはいなかった古の物語。<br>
-                    絶大なる魔力を有し、人々から敬われ、時に恐れられる存在<strong>〈聖騎士〉</strong>に守られた「リオネス王国」。
+            <div className="bg-gray-900/60 p-8 md:p-14 rounded-2xl border border-gray-700/50 shadow-2xl relative overflow-hidden backdrop-blur-sm group hover:border-red-900/50 transition-colors duration-500">
+              <div className="absolute -top-12 -left-8 text-red-700/10 text-9xl font-sans font-black select-none pointer-events-none group-hover:text-red-700/20 transition-colors duration-500">"</div>
+              <div className="relative z-10">
+                <p className="text-lg md:text-xl leading-[2.2] text-gray-300 mb-8 tracking-wide">
+                  いまだ人と、ひとならざるものの世界が、分かたれてはいなかった古の物語。<br />
+                  絶大なる魔力を有し、人々から敬われ、時に恐れられる存在<strong className="text-amber-500 font-black mx-1 tracking-wider drop-shadow-md">〈聖騎士〉</strong>に守られた「リオネス王国」。
                 </p>
-                <p class="text-lg leading-loose text-gray-300">
-                    王国の王女エリザベスは、たった一人国を離れ、ある者たちを探す旅に出ていた。<br>
-                    それは最強最悪の騎士団として恐れられ、国を裏切り全聖騎士を敵に回した罪人たち——<strong>〈七つの大罪〉</strong>。<br>
-                    辿り着いた一軒の酒場で、エリザベスは店主を名乗る少年・メリオダスに出会う。それは、彼女と〈七つの大罪〉たち、そして世界の命運を一変させる驚天動地の冒険の始まりだった！
+                <p className="text-lg md:text-xl leading-[2.2] text-gray-300 tracking-wide">
+                  王国の王女エリザベスは、たった一人国を離れ、ある者たちを探す旅に出ていた。<br />
+                  それは最強最悪の騎士団として恐れられ、国を裏切り全聖騎士を敵に回した罪人たち——<strong className="text-red-500 font-black mx-1 tracking-wider drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]">〈七つの大罪〉</strong>。<br />
+                  辿り着いた一軒の酒場で、エリザベスは店主を名乗る少年・メリオダスに出会う。それは、彼女と〈七つの大罪〉たち、そして世界の命運を一変させる驚天動地の冒険の始まりだった！
                 </p>
+              </div>
             </div>
-        </div>
-    </section>
+          </div>
+        </section>
 
-    <!-- キャラクター -->
-    <section id="characters" class="py-20 bg-gray-900 px-4">
-        <div class="max-w-6xl mx-auto">
-            <div class="flex items-center justify-center mb-16">
-                <div class="h-[1px] w-16 bg-sin-gold"></div>
-                <h2 class="text-3xl font-bold mx-6 tracking-widest text-white">登場人物</h2>
-                <div class="h-[1px] w-16 bg-sin-gold"></div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                
-                <!-- メリオダス -->
-                <div class="group bg-gray-800 border border-gray-700 rounded-xl overflow-hidden hover:border-sin-red transition-all duration-300 shadow-lg hover:shadow-sin-red/20 hover:-translate-y-1">
-                    <div class="h-32 bg-gradient-to-br from-red-900 to-gray-900 flex items-center justify-center relative">
-                        <span class="text-6xl text-white/10 font-black absolute">WRATH</span>
-                        <h3 class="text-2xl font-bold text-white z-10">メリオダス</h3>
-                    </div>
-                    <div class="p-6">
-                        <div class="text-sin-red text-sm font-bold mb-2">憤怒の罪（ドラゴン・シン）</div>
-                        <p class="text-gray-400 text-sm leading-relaxed">
-                            本作の主人公。移動酒場「豚の帽子」亭の店長にして、〈七つの大罪〉の団長。見た目は少年だが、底知れぬ力と過去を秘めている。セクハラが玉に瑕。
-                        </p>
-                    </div>
-                </div>
-
-                <!-- エリザベス -->
-                <div class="group bg-gray-800 border border-gray-700 rounded-xl overflow-hidden hover:border-blue-500 transition-all duration-300 shadow-lg hover:shadow-blue-500/20 hover:-translate-y-1">
-                    <div class="h-32 bg-gradient-to-br from-blue-900 to-gray-900 flex items-center justify-center relative">
-                        <span class="text-6xl text-white/10 font-black absolute">PRINCESS</span>
-                        <h3 class="text-2xl font-bold text-white z-10">エリザベス</h3>
-                    </div>
-                    <div class="p-6">
-                        <div class="text-blue-400 text-sm font-bold mb-2">リオネス王国第3王女</div>
-                        <p class="text-gray-400 text-sm leading-relaxed">
-                            本作のヒロイン。聖騎士によるクーデターから王国を救うため、〈七つの大罪〉を探す旅に出た。泣き虫だが強い信念と優しさを持つ。
-                        </p>
-                    </div>
-                </div>
-
-                <!-- ホーク -->
-                <div class="group bg-gray-800 border border-gray-700 rounded-xl overflow-hidden hover:border-pink-500 transition-all duration-300 shadow-lg hover:shadow-pink-500/20 hover:-translate-y-1">
-                    <div class="h-32 bg-gradient-to-br from-pink-900 to-gray-900 flex items-center justify-center relative">
-                        <span class="text-6xl text-white/10 font-black absolute">PIG</span>
-                        <h3 class="text-2xl font-bold text-white z-10">ホーク</h3>
-                    </div>
-                    <div class="p-6">
-                        <div class="text-pink-400 text-sm font-bold mb-2">残飯処理騎士団団長</div>
-                        <p class="text-gray-400 text-sm leading-relaxed">
-                            メリオダスの相棒で、人語を話す豚。「豚の帽子」亭の看板豚であり、客の残飯を処理するのが仕事。自称「最強の戦士」。
-                        </p>
-                    </div>
-                </div>
-
-                <!-- ディアンヌ -->
-                <div class="group bg-gray-800 border border-gray-700 rounded-xl overflow-hidden hover:border-orange-500 transition-all duration-300 shadow-lg hover:shadow-orange-500/20 hover:-translate-y-1">
-                    <div class="p-6 h-full flex flex-col justify-between">
-                        <div>
-                            <h3 class="text-xl font-bold text-white mb-1">ディアンヌ</h3>
-                            <div class="text-orange-500 text-sm font-bold mb-4">嫉妬の罪（サーペント・シン）</div>
-                            <p class="text-gray-400 text-sm leading-relaxed">巨人族の少女。メリオダスのことが大好きで、彼に近づく女性には嫉妬心を燃やす。巨大な体と大地を操る魔力を持つ。</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- バン -->
-                <div class="group bg-gray-800 border border-gray-700 rounded-xl overflow-hidden hover:border-purple-500 transition-all duration-300 shadow-lg hover:shadow-purple-500/20 hover:-translate-y-1">
-                    <div class="p-6 h-full flex flex-col justify-between">
-                        <div>
-                            <h3 class="text-xl font-bold text-white mb-1">バン</h3>
-                            <div class="text-purple-500 text-sm font-bold mb-4">強欲の罪（フォックス・シン）</div>
-                            <p class="text-gray-400 text-sm leading-relaxed">「不死身のバン」の異名を持つ。どんな傷も瞬時に回復する不老不死の肉体を持つ。メリオダスとは親友であり喧嘩仲間。</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- キング -->
-                <div class="group bg-gray-800 border border-gray-700 rounded-xl overflow-hidden hover:border-green-500 transition-all duration-300 shadow-lg hover:shadow-green-500/20 hover:-translate-y-1">
-                    <div class="p-6 h-full flex flex-col justify-between">
-                        <div>
-                            <h3 class="text-xl font-bold text-white mb-1">キング</h3>
-                            <div class="text-green-500 text-sm font-bold mb-4">怠惰の罪（グリズリー・シン）</div>
-                            <p class="text-gray-400 text-sm leading-relaxed">本名は妖精王ハーレクイン。普段は空中に浮遊するクッションを抱えた少年の姿をしているが、緊張するとふくよかなおっさんの姿になる。</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ゴウセル -->
-                <div class="group bg-gray-800 border border-gray-700 rounded-xl overflow-hidden hover:border-pink-300 transition-all duration-300 shadow-lg hover:shadow-pink-300/20 hover:-translate-y-1">
-                    <div class="p-6 h-full flex flex-col justify-between">
-                        <div>
-                            <h3 class="text-xl font-bold text-white mb-1">ゴウセル</h3>
-                            <div class="text-pink-300 text-sm font-bold mb-4">色欲の罪（ゴート・シン）</div>
-                            <p class="text-gray-400 text-sm leading-relaxed">中性的な容姿で、常に無表情かつ抑揚のない話し方をする。人の心や記憶を読み取ったり、操作したりする魔力を持つ。</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- マーリン -->
-                <div class="group bg-gray-800 border border-gray-700 rounded-xl overflow-hidden hover:border-indigo-500 transition-all duration-300 shadow-lg hover:shadow-indigo-500/20 hover:-translate-y-1">
-                    <div class="p-6 h-full flex flex-col justify-between">
-                        <div>
-                            <h3 class="text-xl font-bold text-white mb-1">マーリン</h3>
-                            <div class="text-indigo-500 text-sm font-bold mb-4">暴食の罪（ボア・シン）</div>
-                            <p class="text-gray-400 text-sm leading-relaxed">ブリタニア一の魔術士と称される妖艶な美女。常に不敵な笑みを浮かべ、様々な魔法具（マジックアイテム）を開発している。</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- エスカノール -->
-                <div class="group bg-gray-800 border border-gray-700 rounded-xl overflow-hidden hover:border-yellow-500 transition-all duration-300 shadow-lg hover:shadow-yellow-500/20 hover:-translate-y-1">
-                    <div class="p-6 h-full flex flex-col justify-between">
-                        <div>
-                            <h3 class="text-xl font-bold text-white mb-1">エスカノール</h3>
-                            <div class="text-yellow-500 text-sm font-bold mb-4">傲慢の罪（ライオン・シン）</div>
-                            <p class="text-gray-400 text-sm leading-relaxed">夜は気弱で痩せ細った老人だが、日の出と共に体が巨大化し、性格も「傲慢」に変化する。正午には無敵の強さを誇る。</p>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-    </section>
-
-    <!-- 世界観・用語 -->
-    <section id="world" class="py-20 bg-gray-800 px-4 border-t border-gray-700">
-        <div class="max-w-4xl mx-auto">
-            <div class="flex items-center justify-center mb-12">
-                <div class="h-[1px] w-16 bg-gray-500"></div>
-                <h2 class="text-3xl font-bold mx-6 tracking-widest text-white">世界観・用語</h2>
-                <div class="h-[1px] w-16 bg-gray-500"></div>
+        {/* キャラクター */}
+        <section id="characters" className="py-24 px-4 scroll-mt-20 relative">
+          <div className="max-w-6xl mx-auto relative z-10">
+            <div className="flex items-center justify-center mb-20">
+              <div className="h-[2px] w-24 bg-gradient-to-l from-amber-600 to-transparent"></div>
+              <h2 className="text-3xl md:text-4xl font-black mx-8 tracking-widest text-white drop-shadow-lg">登場人物</h2>
+              <div className="h-[2px] w-24 bg-gradient-to-r from-amber-600 to-transparent"></div>
             </div>
 
-            <div class="space-y-6">
-                <!-- 用語1 -->
-                <div class="bg-gray-900 p-6 rounded-lg border-l-4 border-sin-red shadow-md">
-                    <h3 class="text-xl font-bold text-white mb-2">ブリタニア</h3>
-                    <p class="text-gray-400 leading-relaxed">
-                        物語の舞台となる大陸。人間族、巨人族、妖精族、魔神族、女神族など、多様な種族が存在する（または過去に存在していた）地。
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {characters.map((char) => (
+                <div 
+                  key={char.id} 
+                  onClick={() => setSelectedCharacter(char)}
+                  className={`group bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden ${char.borderColor} transition-all duration-300 ${char.shadowColor} hover:-translate-y-2 cursor-pointer flex flex-col h-full`}
+                >
+                  <div className={`h-40 bg-gradient-to-br ${char.bgGradient} flex items-center justify-center relative overflow-hidden`}>
+                    <span className="text-7xl text-white/5 font-black absolute tracking-[0.2em] select-none group-hover:scale-110 transition-transform duration-500">{char.symbol}</span>
+                    <h3 className="text-3xl font-black text-white z-10 tracking-widest drop-shadow-lg">{char.name}</h3>
+                  </div>
+                  <div className="p-8 flex-grow flex flex-col bg-gray-900/90">
+                    <div className={`${char.textColor} text-sm font-black mb-4 tracking-widest drop-shadow-sm`}>{char.title}</div>
+                    <p className="text-gray-400 text-sm leading-loose mb-6 flex-grow">
+                      {char.description}
                     </p>
+                    <div className="flex items-center text-xs text-gray-500 font-bold self-end mt-auto group-hover:text-white transition-colors duration-300 bg-gray-800 py-2 px-4 rounded-full">
+                      <Info size={14} className="mr-1.5" /> 詳細を読む
+                    </div>
+                  </div>
                 </div>
-                <!-- 用語2 -->
-                <div class="bg-gray-900 p-6 rounded-lg border-l-4 border-blue-500 shadow-md">
-                    <h3 class="text-xl font-bold text-white mb-2">聖騎士（せいきし）</h3>
-                    <p class="text-gray-400 leading-relaxed">
-                        一騎当千の力を誇る、王国を守護する騎士たち。魔力を操り、強大な戦闘力を持つため、一般の兵士や民衆からは畏怖の対象となっている。
-                    </p>
-                </div>
-                <!-- 用語3 -->
-                <div class="bg-gray-900 p-6 rounded-lg border-l-4 border-purple-600 shadow-md">
-                    <h3 class="text-xl font-bold text-white mb-2">聖戦（せいせん）</h3>
-                    <p class="text-gray-400 leading-relaxed">
-                        三千年前、魔神族と、人間・女神・妖精・巨人の四種族連合との間で起こった大規模な戦争。この戦いにより魔神族は封印されたと伝えられている。
-                    </p>
-                </div>
-                <!-- 用語4 -->
-                <div class="bg-gray-900 p-6 rounded-lg border-l-4 border-sin-gold shadow-md">
-                    <h3 class="text-xl font-bold text-white mb-2">神器（じんぎ）</h3>
-                    <p class="text-gray-400 leading-relaxed">
-                        リオネス国王から〈七つの大罪〉のメンバーそれぞれに下賜された特別な武器。持ち主の魔力を最大限に引き出すことができる。
-                    </p>
-                </div>
+              ))}
             </div>
-        </div>
-    </section>
+          </div>
+        </section>
 
-    <!-- フッター -->
-    <footer class="bg-sin-dark py-8 border-t border-gray-800 text-center">
-        <div class="max-w-6xl mx-auto px-4">
-            <p class="text-gray-500 text-sm mb-4">
-                ※当サイトはアニメ「七つの大罪」の非公式ファンサイト（解説用サンプル）です。<br>
-                公式の制作会社、出版社等とは一切関係ありません。
-            </p>
-            <p class="text-gray-600 font-bold tracking-widest text-lg">
-                <span class="text-sin-red">THE SEVEN DEADLY SINS</span>
-            </p>
-        </div>
-    </footer>
+        {/* キャラクター詳細モーダル */}
+        {selectedCharacter && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+            {/* 背景のブラー */}
+            <div 
+              className="absolute inset-0 bg-black/70 backdrop-blur-md transition-opacity"
+              onClick={() => setSelectedCharacter(null)}
+            ></div>
+            
+            {/* モーダル本体（ポップインアニメーション付き） */}
+            <div className="bg-gray-900 border border-gray-700 rounded-3xl p-0 max-w-xl w-full relative z-10 shadow-[0_20px_50px_rgba(0,0,0,0.8)] overflow-hidden animate-pop-in">
+              <button 
+                onClick={() => setSelectedCharacter(null)}
+                className="absolute top-5 right-5 text-white/50 hover:text-white bg-black/40 hover:bg-black/80 p-2.5 rounded-full transition-colors z-20"
+              >
+                <X size={24} />
+              </button>
+              
+              <div className={`h-48 bg-gradient-to-br ${selectedCharacter.bgGradient} flex flex-col items-center justify-center relative shadow-inner`}>
+                <span className="text-8xl text-white/5 font-black absolute tracking-widest">{selectedCharacter.symbol}</span>
+                <h3 className="text-4xl font-black text-white z-10 tracking-widest drop-shadow-lg mb-2">{selectedCharacter.name}</h3>
+                <div className={`${selectedCharacter.textColor} bg-black/30 px-4 py-1 rounded-full text-sm font-bold tracking-widest z-10 backdrop-blur-sm border border-white/10`}>
+                  {selectedCharacter.title}
+                </div>
+              </div>
+              
+              <div className="p-8 md:p-10">
+                <p className="text-gray-300 leading-[2.2] mb-8 text-base">
+                  {selectedCharacter.detail || selectedCharacter.description}
+                </p>
+                <button 
+                  onClick={() => setSelectedCharacter(null)}
+                  className="w-full py-4 bg-gray-800 hover:bg-gray-700 text-white rounded-xl font-bold tracking-widest transition-colors duration-300 border border-gray-700"
+                >
+                  閉じる
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
-</body>
-</html>
+        {/* 世界観・用語 */}
+        <section id="world" className="py-24 px-4 border-t border-gray-800/50 scroll-mt-20">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-center justify-center mb-20">
+              <div className="h-[2px] w-24 bg-gradient-to-l from-gray-500 to-transparent"></div>
+              <h2 className="text-3xl md:text-4xl font-black mx-8 tracking-widest text-white drop-shadow-lg">世界観・用語</h2>
+              <div className="h-[2px] w-24 bg-gradient-to-r from-gray-500 to-transparent"></div>
+            </div>
+
+            <div className="space-y-8">
+              {worldTerms.map((item, index) => (
+                <div key={index} className={`bg-gray-900/50 p-8 rounded-2xl border-l-4 ${item.borderColor} border-y border-r border-gray-800 shadow-lg hover:shadow-2xl hover:bg-gray-900/80 transition-all duration-300 backdrop-blur-sm`}>
+                  <h3 className="text-2xl font-bold text-white mb-4 flex items-center tracking-wide">
+                    <span className="bg-gray-950 text-gray-400 text-xs px-3 py-1.5 rounded-md mr-4 border border-gray-800 font-sans tracking-normal shadow-inner">Keyword</span>
+                    {item.term}
+                  </h3>
+                  <p className="text-gray-400 leading-[2.2]">
+                    {item.desc}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      </div>
+
+      {/* フッター */}
+      <footer className="bg-black py-16 border-t border-red-900/30 text-center relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(ellipse_at_top,_#B91C1C_0%,_transparent_70%)]"></div>
+        <div className="max-w-6xl mx-auto px-4 relative z-10">
+          <button onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="text-4xl font-black text-white tracking-[0.3em] mb-10 block w-full hover:opacity-80 transition-opacity drop-shadow-lg">
+            <span className="text-red-700">七</span>つの大罪
+          </button>
+          
+          <div className="flex justify-center space-x-10 mb-10">
+            <button onClick={() => scrollToSection('synopsis')} className="text-sm font-bold tracking-widest text-gray-500 hover:text-white transition-colors">あらすじ</button>
+            <button onClick={() => scrollToSection('characters')} className="text-sm font-bold tracking-widest text-gray-500 hover:text-white transition-colors">キャラクター</button>
+            <button onClick={() => scrollToSection('world')} className="text-sm font-bold tracking-widest text-gray-500 hover:text-white transition-colors">世界観</button>
+          </div>
+          
+          <div className="h-px w-24 bg-gray-800 mx-auto mb-10"></div>
+          
+          <p className="text-gray-600 text-xs mb-8 max-w-lg mx-auto leading-loose">
+            ※当サイトはアニメ「七つの大罪」の非公式ファンサイト（解説用サンプルアプリ）です。<br />
+            公式の制作会社、出版社等とは一切関係ありません。
+          </p>
+          <p className="text-gray-800 font-black tracking-[0.4em] text-lg md:text-xl">
+            THE SEVEN DEADLY SINS
+          </p>
+        </div>
+      </footer>
+
+    </div>
+  );
+}
